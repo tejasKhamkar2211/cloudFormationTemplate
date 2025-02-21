@@ -6,6 +6,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Allow SSH, HTTP access, and all outbound traffic
+      VpcId: vpc-0fc486723c9245821
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 22
@@ -27,8 +28,9 @@ Resources:
       InstanceType: t2.micro
       ImageId: ami-0c94855ba95c71c99
       KeyName: ansiblenverginia
-      SecurityGroups:
+      SecurityGroupIds:
         - !Ref MySecurityGroup
+      SubnetId: subnet-0445a03dfbdf333a8
       Tags:
         - Key: Name
           Value: MyEC2Instance
@@ -41,11 +43,8 @@ Outputs:
     Description: The Public IP of the instance
     Value: !GetAtt MyEC2Instance.PublicIp
   VpcId:
-    Description: The VPC ID of the instance
-    Value: !GetAtt MyEC2Instance.VpcId
-  SubnetId:
-    Description: The Subnet ID of the instance
-    Value: !GetAtt MyEC2Instance.SubnetId
+    Description: The VPC ID
+    Value: vpc-0fc486723c9245821
   SecurityGroupId:
     Description: The Security Group ID
     Value: !Ref MySecurityGroup
