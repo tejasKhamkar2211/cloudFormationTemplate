@@ -1,0 +1,27 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Create an EC2 instance using CloudFormation
+Resources:
+  MyEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-0c94855ba95c71c99
+      KeyName: ansiblenverginia
+      SecurityGroups:
+        - default
+      Tags:
+        - Key: Name
+          Value: MyEC2Instance
+Outputs:
+  InstanceId:
+    Description: The Instance ID
+    Value: !Ref MyEC2Instance
+  PublicIp:
+    Description: The Public IP of the instance
+    Value: !GetAtt MyEC2Instance.PublicIp
+  VpcId:
+    Description: The VPC ID of the instance
+    Value: !GetAtt MyEC2Instance.VpcId
+  SubnetId:
+    Description: The Subnet ID of the instance
+    Value: !GetAtt MyEC2Instance.SubnetId
