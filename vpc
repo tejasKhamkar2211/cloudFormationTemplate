@@ -1,0 +1,171 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Create a VPC named cloudformation with an Internet Gateway, Route Tables, three Subnets (Web, App, DB), Security Groups, and EC2 instances with KeyName
+
+Parameters:
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Name of an existing EC2 KeyPair to enable SSH access
+
+Resources:
+  MyVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: cloudformation
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref MyVPC
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref MyVPC
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AttachGateway
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  WebSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref MyVPC
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: WebSubnet
+
+  AppSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref MyVPC
+      CidrBlock: 10.0.2.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: AppSubnet
+
+  DBSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref MyVPC
+      CidrBlock: 10.0.3.0/24
+      Tags:
+        - Key: Name
+          Value: DBSubnet
+
+  WebSubnetAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref WebSubnet
+      RouteTableId: !Ref PublicRouteTable
+
+  AppSubnetAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref AppSubnet
+      RouteTableId: !Ref PublicRouteTable
+
+  WebCloudFormationSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: webcloudformatonsg
+      GroupDescription: Security Group for Web Subnet
+      VpcId: !Ref MyVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+
+  AppCloudFormationSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: appcloudformationsg
+      GroupDescription: Security Group for App Subnet
+      VpcId: !Ref MyVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+
+  WebEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-0c55b159cbfafe1f0  # Replace with a valid AMI ID
+      SubnetId: !Ref WebSubnet
+      SecurityGroupIds:
+        - !Ref WebCloudFormationSG
+      KeyName: !Ref KeyName
+      Tags:
+        - Key: Name
+          Value: WebInstance
+
+  AppEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-0c55b159cbfafe1f0  # Replace with a valid AMI ID
+      SubnetId: !Ref AppSubnet
+      SecurityGroupIds:
+        - !Ref AppCloudFormationSG
+      KeyName: !Ref KeyName
+      Tags:
+        - Key: Name
+          Value: AppInstance
+
+Outputs:
+  VPCId:
+    Description: The ID of the VPC
+    Value: !Ref MyVPC
+  WebSubnetId:
+    Description: The ID of the Web Subnet
+    Value: !Ref WebSubnet
+  AppSubnetId:
+    Description: The ID of the App Subnet
+    Value: !Ref AppSubnet
+  DBSubnetId:
+    Description: The ID of the DB Subnet
+    Value: !Ref DBSubnet
+  WebCloudFormationSGId:
+    Description: The ID of the Web Security Group
+    Value: !Ref WebCloudFormationSG
+  AppCloudFormationSGId:
+    Description: The ID of the App Security Group
+    Value: !Ref AppCloudFormationSG
+  WebEC2InstanceId:
+    Description: The ID of the Web EC2 Instance
+    Value: !Ref WebEC2Instance
+  AppEC2InstanceId:
+    Description: The ID of the App EC2 Instance
+    Value: !Ref AppEC2Instance
